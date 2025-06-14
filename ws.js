@@ -2,8 +2,12 @@ const uWS = require('uWebSockets.js')
 
 // send updates at a reliable rate to all clients 
 // handle incoming messages/update requests in a queue
-let queue = []
-
+let queue =  new Queue()
+// Example usage:
+// const q = new Queue();
+// q.enqueue('task1');
+// q.enqueue('task2');
+// console.log(q.dequeue()); // task1
 
 uWS.App().ws('/*', {
   maxPayloadLength: 16 * 1024 * 1024,
@@ -19,23 +23,33 @@ uWS.App().ws('/*', {
   },
 
   open: (ws) => {
-    console.log('WebSocket connected');
-    ws.send('Hello from uWebSockets!');
+    console.log('WebSocket connected')
+    ws.send('Hello from uWebSockets!')
   },
 
   message: (ws, message) => {
-    const text = Buffer.from(message).toString();
-    console.log('Received:', text);
-    ws.send('Echo: ' + text);
+    const text = Buffer.from(message).toString()
+    console.log('Received:', text)
+    ws.send('Echo: ' + text)
   },
 
   close: () => {
-    console.log('WebSocket closed');
+    console.log('WebSocket closed')
   }
 }).listen(9001, (token) => {
   if (token) {
-    console.log('WebSocket listening on ws://localhost:9001');
+    console.log('WebSocket listening on ws://localhost:9001')
   } else {
-    console.log('WebSocket failed to start');
+    console.log('WebSocket failed to start')
   }
 });
+
+async function main(){
+  // Process Loop
+  while (true){
+    const event = await 
+  }
+}
+
+
+main()

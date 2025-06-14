@@ -1,27 +1,37 @@
 class Queue {
   constructor() {
-    this.items = [];
+    this.events = []
+    this.awaitingRequest = undefined
   }
 
-  enqueue(item) {
-    this.items.push(item); 
+  enqueue(data) {
+    if (this.awaitingRequest) {
+      const resolveRequest = this.awaitingRequest
+      this.awaitingRequest = undefined
+      resolveRequest(data)
+    } else {
+      this.events.push(data)
+    }
   }
 
-  dequeue() {
-    return this.items.shift();
+  async dequeue() {
+    if (this.events.length > 0) {
+      return this.events.shift()
+    }
+    return new Promise((res) => (this.awaitingRequest = res))
   }
 
-  peek() {
-    return this.items[0];
-  }
+  // peek() {
+  //   return this.this[0]
+  // }
 
-  isEmpty() {
-    return this.items.length === 0;
-  }
+  // isEmpty() {
+  //   return this.this.length === 0
+  // }
 
-  size() {
-    return this.items.length;
-  }
+  // size() {
+  //   return this.this.length
+  // }
 }
 
 // Example usage:
