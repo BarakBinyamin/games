@@ -1,5 +1,10 @@
 const uWS = require('uWebSockets.js')
 
+// send updates at a reliable rate to all clients 
+// handle incoming messages/update requests in a queue
+let queue = []
+
+
 uWS.App().ws('/*', {
   maxPayloadLength: 16 * 1024 * 1024,
 
