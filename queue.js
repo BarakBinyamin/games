@@ -34,6 +34,8 @@ class Queue {
   // }
 }
 
+module.exports = Queue
+
 // Example usage:
 // const q = new Queue();
 // q.enqueue('task1');
