@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>uWebSockets Client</title>
+</head>
+<body>
+  <h1>WebSocket Client over HTTPS</h1>
+  <input id="msg" placeholder="Type a message" />
+  <button onclick="send()">Send</button>
+  <ul id="log"></ul>
+
+  <script>
+    const ws = new WebSocket('ws://localhost:9001'); // NOT wss because uWebSockets is not on HTTPS
+
+    ws.onopen = () => console.log('Connected to WebSocket');
+    ws.onmessage = (event) => {
+      const li = document.createElement('li');
+      li.textContent = event.data;
+      document.getElementById('log').appendChild(li);
+    };
+
+    function send() {
+      const val = document.getElementById('msg').value;
+      ws.send(val);
+    }
+  </script>
+</body>
+</html>
