@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid')
 
 let queue           =  new Queue()    // [{id,cursorX,cursorY}]
 let clients         = {}              // [{id,x,y,conn}]
-let UPDATE_INTERVAL = 1000            // 34  ms
+let UPDATE_INTERVAL = 34            // 34  ms
 let state           = {}              // [{id,}]
 
 // 10k x 10k
@@ -78,11 +78,13 @@ async function main(){
   setInterval(sendUpdate, UPDATE_INTERVAL)
   while (true){
     const {id,cursorX,cursorY,radius} = await queue.dequeue() // { id, cursorX, cursorY, radius }
-    const velocity   = 1
-    const positionX  = state[id].x
-    const positionY  = state[id].y
-    state[id].x = positionX>cursorX  ? positionX+velocity : positionX-velocity
-    state[id].y = positionY>cursorY  ? positionY+velocity : positionY-velocity
+    
+    const {x, y}  = state[id]
+    const dx = (x - cursorX)
+    const dy = (y - cursorY)
+    const mag = 1/Math.sqrt(dx*dx + dy*dy)
+    state[id].x = x -mag*dx
+    state[id].y = y -mag*dy
   }
 }
 

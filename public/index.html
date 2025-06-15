@@ -29,9 +29,12 @@
       let lastUpdateTime = performance.now();
 
       let viewport = {
-        topleft: { x: BOARD_WIDTH / 4, y: BOARD_HEIGHT / 4 }, // Start centered
-        width: BOARD_WIDTH/2,
-        height: BOARD_HEIGHT/2,
+        // topleft: { x: BOARD_WIDTH / 4, y: BOARD_HEIGHT / 4 }, // Start centered
+        // width: BOARD_WIDTH/2,
+        // height: BOARD_HEIGHT/2,
+        topleft: { x: 0, y: 0 }, // Start centered
+        width: BOARD_WIDTH,
+        height: BOARD_HEIGHT,
       };
 
       function clip(x, lo, hi) {
@@ -80,10 +83,10 @@
             } else {
               // New circle - start at target position
               circles.set(circleData.id, {
-                id: circleData.id,
-                x: x,
-                y: y,
-                radius: radius,
+                id,
+                x,
+                y,
+                radius,
                 color: circleData.color || "#3498db",
               });
             }
@@ -133,13 +136,6 @@
         )}, ${Math.round(viewport.topleft.y)}) ${Math.round(
           viewport.width
         )}×${Math.round(viewport.height)}`;
-      }
-
-      function updateCircles(deltaTime) {
-        for (let [id, circle] of circles) {
-          circle.x = circle.x
-          circle.y = circle.y
-        }
       }
 
       function handleInput() {
@@ -196,18 +192,15 @@
         // Draw circles
         for (let [id, circle] of circles) {
           const screenPos = board2screen({ x: circle.x, y: circle.y });
-          console.log(circle)
           
           // Only draw if visible on screen (with some margin)
           const margin = circle.radius + 10;
-          console.log(screenPos, margin, canvas.width, canvas.height)
           if (
             screenPos.x >= -margin &&
             screenPos.x <= canvas.width + margin &&
             screenPos.y >= -margin &&
             screenPos.y <= canvas.height + margin
           ) {
-            console.log('in')
             ctx.fillStyle = circle.color;
             ctx.beginPath();
             ctx.arc(screenPos.x, screenPos.y, circle.radius, 0, Math.PI * 2);
@@ -232,7 +225,12 @@
         const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
         lastUpdateTime = now;
 
-        updateCircles(deltaTime);
+        function updateCircles(deltaTime) {
+          for (let [id, circle] of circles) {
+            circle.x = circle.x
+            circle.y = circle.y
+          }
+        }
         render();
 
         requestAnimationFrame(gameLoop);
