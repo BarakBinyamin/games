@@ -44,7 +44,7 @@ uWS.App().ws('/*', {
   },
 
   message: (ws, message) => {
-    const event = Buffer.from(message).toString() // { id, cursorX, cursorY}
+    const event = Buffer.from(message).toString() // { cursorX, cursorY}
     event['id'] = ws.id
     queue.enqueue(JSON.parse(event))
   },
@@ -79,8 +79,8 @@ async function main(){
     const velocity   = 1
     const positionX  = state[id].x
     const positionY  = state[id].y
-    state[id].positionX = positionX>cursorX  ? positionX+velocity : positionX-velocity
-    state[id].positionY = positionY>cursorY  ? positionY+velocity : positionY-velocity
+    state[id].x = positionX>cursorX  ? positionX+velocity : positionX-velocity
+    state[id].y = positionY>cursorY  ? positionY+velocity : positionY-velocity
   }
 }
 
