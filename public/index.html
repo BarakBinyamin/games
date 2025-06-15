@@ -123,9 +123,8 @@
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(
             JSON.stringify({
-              type: "click",
-              x: Math.round(boardPos.x),
-              y: Math.round(boardPos.y),
+              cursorX: Math.round(boardPos.x),
+              cursorY: Math.round(boardPos.y),
             })
           );
         }
