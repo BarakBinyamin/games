@@ -58,14 +58,14 @@
       ws.onopen = () => console.log("Connected to WebSocket");
 
       ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        Object.entries(data).forEach((circleData) => {
+        const data = Object.entries(JSON.parse(event.data));
+        data.forEach((circleData) => {
           const [id, data] = circleData;
           circles.set(id, data);
         });
 
         // Remove circles not in the update
-        const updatedIds = new Set(data.map((c) => c.id));
+        const updatedIds = new Set(data.map((c) => c[0]));
         for (let [id, circle] of circles) {
           if (!updatedIds.has(id)) {
             circles.delete(id);
