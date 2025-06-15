@@ -34,6 +34,8 @@ uWS.App().ws('/*', {
     clients[id] = {
       conn   : ws, 
       id     : id,
+    }
+    state[id] = {
       x      : randomX,
       y      : randomY,
       radius : 1
@@ -48,6 +50,7 @@ uWS.App().ws('/*', {
 
   close: (ws) => {
     delete clients[ws.id]
+    delete state[ws.id]
     console.log('WebSocket closed')
   }
 }).listen(9001, (token) => {
@@ -61,10 +64,6 @@ uWS.App().ws('/*', {
 async function sendUpdate(){
   for (const [key, client] of Object.entries(clients)){
     try{
-      state = objects.map((obj) => {
-        delete obj.conn;
-        return obj;
-      })
       client.conn.send(JSON.stringify(state))
     }catch(err){
         console.log(err)
@@ -77,10 +76,10 @@ async function main(){
   while (true){
     const {id,cursorX,cursorY,radius} = await queue.dequeue() // { id, cursorX, cursorY, radius }
     const velocity   = 1
-    const positionX  = clients[id].x
-    const positionY  = clients[id].y
-    clients[id].positionX = positionX>cursorX  ? positionX+velocity : positionX-velocity
-    clients[id].positionY = positionY>cursorY  ? positionY+velocity : positionY-velocity
+    const positionX  = state[id].x
+    const positionY  = state[id].y
+    state[id].positionX = positionX>cursorX  ? positionX+velocity : positionX-velocity
+    state[id].positionY = positionY>cursorY  ? positionY+velocity : positionY-velocity
   }
 }
 
