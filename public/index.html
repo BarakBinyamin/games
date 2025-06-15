@@ -16,7 +16,6 @@
   </style>
   <body>
     <canvas id="canv" width="800" height="800"></canvas>
-    <ul id="viewport-info"></ul>
 
     <script>
       const BOARD_WIDTH = 1_000;
@@ -29,10 +28,7 @@
       let lastUpdateTime = performance.now();
 
       let viewport = {
-        // topleft: { x: BOARD_WIDTH / 4, y: BOARD_HEIGHT / 4 }, // Start centered
-        // width: BOARD_WIDTH/2,
-        // height: BOARD_HEIGHT/2,
-        topleft: { x: 0, y: 0 }, // Start centered
+        topleft: { x: 0, y: 0 },
         width: BOARD_WIDTH,
         height: BOARD_HEIGHT,
       };
@@ -59,48 +55,21 @@
         return a + (b - a) * t;
       }
 
-      ws.onopen = () => {
-        console.log("Connected to WebSocket");
-        updateViewportInfo();
-      };
+      ws.onopen = () => console.log("Connected to WebSocket");
 
       ws.onmessage = (event) => {
-        try {
-          const data = Object.entries(JSON.parse(event.data));
-          const now = performance.now();
+        const data = Object.entries(JSON.parse(event.data))
+        data.forEach((circleData) => {
+          const [id, data] = circleData
+          circles.set(id, data);
+        });
 
-          data.forEach((circleData) => {
-            let [id, {radius, x, y}] = circleData
-            radius = 40*radius
-            const existing = circles.get(circleData.id);
-
-            if (existing) {
-              // Update target position for smooth interpolation
-              existing.x = x;
-              existing.y = y;
-              existing.radius = radius;
-              existing.color = circleData.color || "#3498db";
-            } else {
-              // New circle - start at target position
-              circles.set(circleData.id, {
-                id,
-                x,
-                y,
-                radius,
-                color: circleData.color || "#3498db",
-              });
-            }
-          });
-
-          // Remove circles not in the update
-          const updatedIds = new Set(data.map((c) => c.id));
-          for (let [id, circle] of circles) {
-            if (!updatedIds.has(id)) {
-              circles.delete(id);
-            }
+        // Remove circles not in the update
+        const updatedIds = new Set(data.map((c) => c.id));
+        for (let [id, circle] of circles) {
+          if (!updatedIds.has(id)) {
+            circles.delete(id);
           }
-        } catch (e) {
-          console.error("Error parsing WebSocket message:", e);
         }
       };
 
@@ -129,29 +98,6 @@
           );
         }
       });
-
-      function updateViewportInfo() {
-        document.getElementById("viewport-info").textContent = `(${Math.round(
-          viewport.topleft.x
-        )}, ${Math.round(viewport.topleft.y)}) ${Math.round(
-          viewport.width
-        )}×${Math.round(viewport.height)}`;
-      }
-
-      function handleInput() {
-        let moved = false;
-
-        // if (keys["d"] || keys["arrowright"]) {
-        //   viewport.topleft.x += MOVE_SPEED;
-        //   moved = true;
-        // }
-
-        if (moved) {
-          viewport.topleft.x = clip(viewport.topleft.x, 0, BOARD_WIDTH - viewport.width)
-          viewport.topleft.y = clip(viewport.topleft.y, 0, BOARD_HEIGHT - viewport.height)
-          updateViewportInfo();
-        }
-      }
 
       function render() {
         // Clear canvas
