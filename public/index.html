@@ -34,7 +34,7 @@
       };
 
       function clip(x, lo, hi) {
-        return Math.max(Math.min(x, hi), lo)
+        return Math.max(Math.min(x, hi), lo);
       }
 
       function board2screen({ x: boardx, y: boardy }) {
@@ -58,9 +58,9 @@
       ws.onopen = () => console.log("Connected to WebSocket");
 
       ws.onmessage = (event) => {
-        const data = Object.entries(JSON.parse(event.data))
+        const data = Object.entries(JSON.parse(event.data));
         data.forEach((circleData) => {
-          const [id, data] = circleData
+          const [id, data] = circleData;
           circles.set(id, data);
         });
 
@@ -100,11 +100,9 @@
       });
 
       function render() {
-        // Clear canvas
         ctx.fillStyle = "#f8f9fa";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw grid (optional - helps with debugging)
         ctx.strokeStyle = "#e9ecef";
         ctx.lineWidth = 1;
         const gridSize = 100;
@@ -138,7 +136,7 @@
         // Draw circles
         for (let [id, circle] of circles) {
           const screenPos = board2screen({ x: circle.x, y: circle.y });
-          
+
           // Only draw if visible on screen (with some margin)
           const margin = circle.radius + 10;
           if (
@@ -170,13 +168,6 @@
         const now = performance.now();
         const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
         lastUpdateTime = now;
-
-        function updateCircles(deltaTime) {
-          for (let [id, circle] of circles) {
-            circle.x = circle.x
-            circle.y = circle.y
-          }
-        }
         render();
 
         requestAnimationFrame(gameLoop);
