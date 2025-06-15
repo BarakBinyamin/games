@@ -4,8 +4,8 @@ const { v4: uuidv4 } = require('uuid')
 
 let queue           =  new Queue()    // [{id,cursorX,cursorY}]
 let clients         = {}              // id:{id,conn}
-let NOTIFY_INTERVAL = 34              // 34  ms
-let UPDATE_INTERVAL = 34              // 34  ms
+let NOTIFY_INTERVAL = 1000              // 34  ms
+let UPDATE_INTERVAL = 1000              // 34  ms
 let state           = {}              // id:{id,x,y,color,raudis}
 let COLORS          = ['red','aqua', 'magenta', 'red', 'skyblue']
 // 10k x 10k
@@ -83,6 +83,7 @@ async function sendUpdate(){
 async function updateGame(){
   for (const [key, client] of Object.entries(state)){
     const id                 = client.id
+    console.log(state)
     const {x, y}             = state[id]
     const {cursorX, cursorY} = client
     const dx = (x - cursorX)
