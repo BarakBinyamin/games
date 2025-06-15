@@ -92,6 +92,7 @@ async function updateGame(){
       state[id].x = x -mag*dx
       state[id].y = y -mag*dy
     }
+    console.log(Math.floor(Math.random() * COLORS.length), state)
   }
   // determine collisions and radius next
 }
