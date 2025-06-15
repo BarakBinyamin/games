@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;background:#222">
+    <canvas id="c" width="600" height="600"></canvas>
+    <script>
+      const id = Math.random().toString(36).slice(2);
+      const ws = new WebSocket('ws://localhost:9001');
+      const c = document.getElementById('c'), ctx = c.getContext('2d');
+
+      let remoteX = 0, remoteY = 0;
+
+      const draw = (x, y) => {
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // Local red circle
+        ctx.beginPath();
+        ctx.arc(c.width / 2, c.height / 2, 20, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+
+        // Remote blue circle (if received)
+        if (remoteX !== null && remoteY !== null) {
+          console.log('here')
+          ctx.beginPath();
+          ctx.arc(remoteX, remoteY, 10, 0, Math.PI * 2);
+          ctx.fillStyle = 'blue';
+          ctx.fill();
+        }
+
+        ctx.fillStyle = 'white';
+        ctx.fillText(`x:${Math.floor(x)}, y:${Math.floor(y)}`, 10, 20);
+      };
+
+      c.onmousemove = e => {
+        const r = c.getBoundingClientRect();
+        const x = e.clientX - r.left, y = e.clientY - r.top;
+        draw(x, y);
+        if (ws.readyState === 1) {
+          ws.send(JSON.stringify({ x: Math.floor(x), y: Math.floor(y) }));
+        }
+      };
+
+      ws.onmessage = ({ data }) => {
+      const items = Object.entries(data)
+      remoteX = items[0].x;
+      remoteY = items[0].y;
+      draw(0, 0); // Use dummy values to force redraw
+      console.log(data)
+      }
+    </script>
+  </body>
+</html>
