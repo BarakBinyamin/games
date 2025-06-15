@@ -3,10 +3,11 @@ const Queue          = require('./queue.js')
 const { v4: uuidv4 } = require('uuid')
 
 let queue           =  new Queue()    // [{id,cursorX,cursorY}]
-let clients         = {}              // [{id,x,y,conn}]
-let UPDATE_INTERVAL = 34            // 34  ms
-let state           = {}              // [{id,}]
-
+let clients         = {}              // id:{id,conn}
+let NOTIFY_INTERVAL = 34              // 34  ms
+let UPDATE_INTERVAL = 34              // 34  ms
+let state           = {}              // id:{id,x,y,color,raudis}
+let COLORS          = ['red','aqua', 'magenta', 'red', 'skyblue']
 // 10k x 10k
 // id radius mousex, mousey 
 // event, direction, id
@@ -31,14 +32,20 @@ uWS.App().ws('/*', {
     ws['id']       = id
     const randomX = Math.floor(Math.random() * 1000)
     const randomY = Math.floor(Math.random() * 1000)
+    const randomColorIndex = Math.floor(Math.random() * COLORS.length)
+    const RandomColor      = COLORS[randomColorIndex]
     clients[id] = {
       conn   : ws, 
       id     : id,
     }
     state[id] = {
+      id     : id,
       x      : randomX,
       y      : randomY,
-      radius : 1
+      radius : 40,
+      cursorX: randomX,
+      cursorY: randomY,
+      color  : RandomColor
     }
     // create board and add board position 
   },
@@ -73,18 +80,26 @@ async function sendUpdate(){
     }
   }
 }
-
-async function main(){
-  setInterval(sendUpdate, UPDATE_INTERVAL)
-  while (true){
-    const {id,cursorX,cursorY,radius} = await queue.dequeue() // { id, cursorX, cursorY, radius }
-    
-    const {x, y}  = state[id]
+async function updateGame(){
+  for (const [key, client] of Object.entries(state)){
+    const {x, y}             = state[client.id]
+    const {cursorX, cursorY} = client
     const dx = (x - cursorX)
     const dy = (y - cursorY)
     const mag = 1/Math.sqrt(dx*dx + dy*dy)
     state[id].x = x -mag*dx
     state[id].y = y -mag*dy
+  }
+  // determine collisions and radius next
+}
+
+async function main(){
+  setInterval(updateGame, UPDATE_INTERVAL)
+  setInterval(sendUpdate, NOTIFY_INTERVAL)
+  while (true){
+    const {id,cursorX,cursorY,radius} = await queue.dequeue() // { id, cursorX, cursorY, radius }
+    state[id].cursorX 
+    state[id].cursorY 
   }
 }
 
