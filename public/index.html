@@ -61,6 +61,7 @@
         const data = Object.entries(JSON.parse(event.data));
         data.forEach((circleData) => {
           const [id, data] = circleData;
+          console.log(data)
           circles.set(id, data);
         });
 
