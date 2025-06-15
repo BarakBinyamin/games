@@ -82,7 +82,8 @@ async function sendUpdate(){
 }
 async function updateGame(){
   for (const [key, client] of Object.entries(state)){
-    const {x, y}             = state[client.id]
+    const id                 = client.id
+    const {x, y}             = state[id]
     const {cursorX, cursorY} = client
     const dx = (x - cursorX)
     const dy = (y - cursorY)
