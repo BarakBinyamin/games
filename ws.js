@@ -88,7 +88,7 @@ async function updateGame(){
     const dx = (x - cursorX)
     const dy = (y - cursorY)
     if (dx*dx + dy*dy != 0){
-      const mag = (1/Math.sqrt(dx*dx + dy*dy)) * 10
+      const mag = (1/Math.sqrt(dx*dx + dy*dy)) * 2
       state[id].x = x -mag*dx
       state[id].y = y -mag*dy
     }
