@@ -45,6 +45,7 @@ uWS.App().ws('/*', {
 
   message: (ws, message) => {
     const event = Buffer.from(message).toString() // { id, cursorX, cursorY}
+    event['id'] = ws.id
     queue.enqueue(JSON.parse(event))
   },
 
