@@ -12,3 +12,7 @@ Would you rather have unlimited bacon but no more video games or games, unlimite
 >us: mmm ok sure, but its only got only 8.5k stars...  
 >chatgpt: do it!  
 >us: okkkkk....
+
+#### Terminology
+
+update - sent from server to all clients, 
