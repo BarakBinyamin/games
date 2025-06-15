@@ -61,14 +61,12 @@
         const data = JSON.parse(event.data);
         Object.entries(data).forEach((circleData) => {
           const [id, data] = circleData;
-          console.log(data)
           circles.set(id, data);
         });
 
         // Remove circles not in the update
         const updatedIds = new Set(data.map((c) => c.id));
         for (let [id, circle] of circles) {
-          console.log(updatedIds.has(id))
           if (!updatedIds.has(id)) {
             circles.delete(id);
           }
@@ -135,7 +133,6 @@
           ctx.stroke();
         }
 
-        console.log(circles)
         // Draw circles
         for (let [id, circle] of circles) {
           const screenPos = board2screen({ x: circle.x, y: circle.y });
