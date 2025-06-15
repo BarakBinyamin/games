@@ -4,8 +4,8 @@ const { v4: uuidv4 } = require('uuid')
 
 let queue           =  new Queue()    // [{id,cursorX,cursorY}]
 let clients         = {}              // id:{id,conn}
-let NOTIFY_INTERVAL = 1000              // 34  ms
-let UPDATE_INTERVAL = 1000              // 34  ms
+let NOTIFY_INTERVAL = 39              // 34  ms
+let UPDATE_INTERVAL = 39              // 34  ms
 let state           = {}              // id:{id,x,y,color,raudis}
 let COLORS          = ['red','aqua', 'magenta', 'red', 'skyblue']
 // 10k x 10k
@@ -76,7 +76,7 @@ async function sendUpdate(){
     try{
       client.conn.send(JSON.stringify(state))
     }catch(err){
-        console.log(err)
+      console.log(err)
     }
   }
 }
@@ -88,11 +88,11 @@ async function updateGame(){
     const dx = (x - cursorX)
     const dy = (y - cursorY)
     if (dx*dx + dy*dy != 0){
-      const mag = 1/Math.sqrt(dx*dx + dy*dy)
+      const mag = (1/Math.sqrt(dx*dx + dy*dy)) * 10
       state[id].x = x -mag*dx
       state[id].y = y -mag*dy
     }
-    console.log(Math.floor(Math.random() * COLORS.length), state)
+    // console.log(Math.floor(Math.random() * COLORS.length), state)
   }
   // determine collisions and radius next
 }
@@ -102,8 +102,9 @@ async function main(){
   setInterval(sendUpdate, NOTIFY_INTERVAL)
   while (true){
     const {id,cursorX,cursorY,radius} = await queue.dequeue() // { id, cursorX, cursorY, radius }
-    state[id].cursorX 
-    state[id].cursorY 
+    state[id].cursorX = cursorX
+    state[id].cursorY = cursorY
+    // console.log(state)
   }
 }
 
