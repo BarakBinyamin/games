@@ -112,26 +112,6 @@
         console.log("WebSocket connection closed");
       };
 
-      // // Handle mouse clicks to send board coordinates
-      // canvas.addEventListener("click", (e) => {
-      //   const rect = canvas.getBoundingClientRect();
-      //   const screenPos = {
-      //     x: e.clientX - rect.left,
-      //     y: e.clientY - rect.top,
-      //   };
-      //   const boardPos = screen2board(screenPos);
-
-      //   if (ws.readyState === WebSocket.OPEN) {
-      //     ws.send(
-      //       JSON.stringify({
-      //         type: "click",
-      //         x: Math.round(boardPos.x),
-      //         y: Math.round(boardPos.y),
-      //       })
-      //     );
-      //   }
-      // });
-
       // Mouse move tracking for info display
       canvas.addEventListener("mousemove", (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -140,11 +120,15 @@
           y: e.clientY - rect.top,
         };
         const boardPos = screen2board(screenPos);
-        document.getElementById(
-          "mouse-info"
-        ).textContent = `Screen: (${Math.round(screenPos.x)}, ${Math.round(
-          screenPos.y
-        )}) | Board: (${Math.round(boardPos.x)}, ${Math.round(boardPos.y)})`;
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "click",
+              x: Math.round(boardPos.x),
+              y: Math.round(boardPos.y),
+            })
+          );
+        }
       });
 
       // Viewport controls
@@ -192,23 +176,23 @@
       function handleInput() {
         let moved = false;
 
-        // Handle movement keys
-        if (keys["w"] || keys["arrowup"]) {
-          viewport.topleft.y -= MOVE_SPEED;
-          moved = true;
-        }
-        if (keys["s"] || keys["arrowdown"]) {
-          viewport.topleft.y += MOVE_SPEED;
-          moved = true;
-        }
-        if (keys["a"] || keys["arrowleft"]) {
-          viewport.topleft.x -= MOVE_SPEED;
-          moved = true;
-        }
-        if (keys["d"] || keys["arrowright"]) {
-          viewport.topleft.x += MOVE_SPEED;
-          moved = true;
-        }
+        // // Handle movement keys
+        // if (keys["w"] || keys["arrowup"]) {
+        //   viewport.topleft.y -= MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["s"] || keys["arrowdown"]) {
+        //   viewport.topleft.y += MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["a"] || keys["arrowleft"]) {
+        //   viewport.topleft.x -= MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["d"] || keys["arrowright"]) {
+        //   viewport.topleft.x += MOVE_SPEED;
+        //   moved = true;
+        // }
 
         if (moved) {
           constrainViewport();
@@ -297,13 +281,6 @@
 
       // Start the game loop
       gameLoop();
-
-      // Allow Enter key to send message
-      document.getElementById("msg").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          send();
-        }
-      });
     </script>
   </body>
 </html>
