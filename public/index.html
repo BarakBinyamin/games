@@ -15,26 +15,28 @@
     }
   </style>
   <body>
-    <h1>Jason & Barak's</h1>
-    <canvas id="canv" width="1000" height="1000"></canvas>
+    <canvas id="canv" width="800" height="800"></canvas>
     <ul id="viewport-info"></ul>
 
     <script>
       const BOARD_WIDTH = 1_000;
       const BOARD_HEIGHT = 1_000;
-      const ws = new WebSocket("ws://localhost:9001");
-
       const canvas = document.getElementById("canv");
       const ctx = canvas.getContext("2d");
+      const ws = new WebSocket("ws://localhost:9001");
 
       let circles = new Map(); // id -> circle data
       let lastUpdateTime = performance.now();
 
       let viewport = {
-        topleft: { x: BOARD_WIDTH / 2 - 500, y: BOARD_HEIGHT / 2 - 500 }, // Start centered
-        width: 1000,
-        height: 1000,
+        topleft: { x: BOARD_WIDTH / 4, y: BOARD_HEIGHT / 4 }, // Start centered
+        width: BOARD_WIDTH/2,
+        height: BOARD_HEIGHT/2,
       };
+
+      function clip(x, lo, hi) {
+        return Math.max(Math.min(x, hi), lo)
+      }
 
       function board2screen({ x: boardx, y: boardy }) {
         return {
@@ -65,25 +67,23 @@
           const now = performance.now();
 
           data.forEach((circleData) => {
-            console.log(circleData)
-            const [id, {positionX, positionY, radius, x, y}] = circleData
+            let [id, {radius, x, y}] = circleData
+            radius = 40*radius
             const existing = circles.get(circleData.id);
 
             if (existing) {
               // Update target position for smooth interpolation
-              existing.targetX = circleData.x;
-              existing.targetY = circleData.y;
-              existing.radius = circleData.radius;
+              existing.x = x;
+              existing.y = y;
+              existing.radius = radius;
               existing.color = circleData.color || "#3498db";
             } else {
               // New circle - start at target position
               circles.set(circleData.id, {
                 id: circleData.id,
-                x: circleData.x,
-                y: circleData.y,
-                targetX: circleData.x,
-                targetY: circleData.y,
-                radius: circleData.radius,
+                x: x,
+                y: y,
+                radius: radius,
                 color: circleData.color || "#3498db",
               });
             }
@@ -127,29 +127,6 @@
         }
       });
 
-      // Viewport controls
-      const MOVE_SPEED = 50; // pixels per frame
-      const ZOOM_FACTOR = 1.1;
-
-      function constrainViewport() {
-        // Keep viewport within board bounds
-        viewport.topleft.x = Math.max(
-          0,
-          Math.min(BOARD_WIDTH - viewport.width, viewport.topleft.x)
-        );
-        viewport.topleft.y = Math.max(
-          0,
-          Math.min(BOARD_HEIGHT - viewport.height, viewport.topleft.y)
-        );
-      }
-
-      function centerViewport() {
-        viewport.topleft.x = BOARD_WIDTH / 2 - viewport.width / 2;
-        viewport.topleft.y = BOARD_HEIGHT / 2 - viewport.height / 2;
-        constrainViewport();
-        updateViewportInfo();
-      }
-
       function updateViewportInfo() {
         document.getElementById("viewport-info").textContent = `(${Math.round(
           viewport.topleft.x
@@ -159,13 +136,9 @@
       }
 
       function updateCircles(deltaTime) {
-        const lerpSpeed = 8; // How fast to interpolate to server position
-
         for (let [id, circle] of circles) {
-          // Smooth interpolation towards target position
-          const t = Math.min(1, deltaTime * lerpSpeed);
-          circle.x = lerp(circle.x, circle.targetX, t);
-          circle.y = lerp(circle.y, circle.targetY, t);
+          circle.x = circle.x
+          circle.y = circle.y
         }
       }
 
@@ -178,7 +151,8 @@
         // }
 
         if (moved) {
-          constrainViewport();
+          viewport.topleft.x = clip(viewport.topleft.x, 0, BOARD_WIDTH - viewport.width)
+          viewport.topleft.y = clip(viewport.topleft.y, 0, BOARD_HEIGHT - viewport.height)
           updateViewportInfo();
         }
       }
@@ -222,15 +196,18 @@
         // Draw circles
         for (let [id, circle] of circles) {
           const screenPos = board2screen({ x: circle.x, y: circle.y });
-
+          console.log(circle)
+          
           // Only draw if visible on screen (with some margin)
           const margin = circle.radius + 10;
+          console.log(screenPos, margin, canvas.width, canvas.height)
           if (
             screenPos.x >= -margin &&
             screenPos.x <= canvas.width + margin &&
             screenPos.y >= -margin &&
             screenPos.y <= canvas.height + margin
           ) {
+            console.log('in')
             ctx.fillStyle = circle.color;
             ctx.beginPath();
             ctx.arc(screenPos.x, screenPos.y, circle.radius, 0, Math.PI * 2);
