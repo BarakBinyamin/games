@@ -1,29 +1,285 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>uWebSockets Client</title>
-</head>
-<body>
-  <h1>WebSocket Client over HTTPS</h1>
-  <input id="msg" placeholder="Type a message" />
-  <button onclick="send()">Send</button>
-  <ul id="log"></ul>
-
-  <script>
-    const ws = new WebSocket('ws://localhost:9001'); // NOT wss because uWebSockets is not on HTTPS
-
-    ws.onopen = () => console.log('Connected to WebSocket');
-    ws.onmessage = (event) => {
-      const li = document.createElement('li');
-      li.textContent = event.data;
-      document.getElementById('log').appendChild(li);
-    };
-
-    function send() {
-      const val = document.getElementById('msg').value;
-      ws.send(val);
+  <head>
+    <meta charset="UTF-8" />
+    <title>uWebSockets Client</title>
+  </head>
+  <style>
+    canvas {
+      border: 2px solid #333;
+      background-color: white;
+      display: block;
+      margin: 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-  </script>
-</body>
+  </style>
+  <body>
+    <h1>Jason & Barak's </h1>
+    <canvas id="canv" width="800" height="600"></canvas>
+    <ul id="viewport-info"></ul>
+
+    <script>
+      const BOARD_WIDTH = 10_000;
+      const BOARD_HEIGHT = 10_000;
+      const ws = new WebSocket("ws://localhost:9001");
+
+      const canvas = document.getElementById("canv");
+      const ctx = canvas.getContext("2d");
+
+      let circles = new Map(); // id -> circle data
+      let lastUpdateTime = performance.now();
+
+      let viewport = {
+        topleft: { x: BOARD_WIDTH / 2 - 400, y: BOARD_HEIGHT / 2 - 300 }, // Start centered
+        width: 800,
+        height: 600,
+      };
+
+      function board2screen({ x: boardx, y: boardy }) {
+        return {
+          x: (boardx - viewport.topleft.x) * (canvas.width / viewport.width),
+          y: (boardy - viewport.topleft.y) * (canvas.height / viewport.height),
+        };
+      }
+
+      function screen2board({ x: screenx, y: screeny }) {
+        return {
+          x: viewport.topleft.x + (screenx * viewport.width) / canvas.width,
+          y: viewport.topleft.y + (screeny * viewport.height) / canvas.height,
+        };
+      }
+
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket");
+        updateViewportInfo();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Expecting array of {id, x, y, radius, color?}
+          if (Array.isArray(data)) {
+            const now = performance.now();
+
+            data.forEach((circleData) => {
+              const existing = circles.get(circleData.id);
+
+              if (existing) {
+                // Update target position for smooth interpolation
+                existing.targetX = circleData.x;
+                existing.targetY = circleData.y;
+                existing.radius = circleData.radius;
+                existing.color = circleData.color || "#3498db";
+              } else {
+                // New circle - start at target position
+                circles.set(circleData.id, {
+                  id: circleData.id,
+                  x: circleData.x,
+                  y: circleData.y,
+                  targetX: circleData.x,
+                  targetY: circleData.y,
+                  radius: circleData.radius,
+                  color: circleData.color || "#3498db",
+                });
+              }
+            });
+
+            // Remove circles not in the update
+            const updatedIds = new Set(data.map((c) => c.id));
+            for (let [id, circle] of circles) {
+              if (!updatedIds.has(id)) {
+                circles.delete(id);
+              }
+            }
+
+            document.getElementById("circle-count").textContent = circles.size;
+          }
+        } catch (e) {
+          console.error("Error parsing WebSocket message:", e);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+      };
+
+      // Mouse move tracking for info display
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const screenPos = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        };
+        const boardPos = screen2board(screenPos);
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              cursorX: Math.round(boardPos.x),
+              cursorY: Math.round(boardPos.y),
+            })
+          );
+        }
+      });
+
+      // Viewport controls
+      const MOVE_SPEED = 50; // pixels per frame
+      const ZOOM_FACTOR = 1.1;
+
+      function constrainViewport() {
+        // Keep viewport within board bounds
+        viewport.topleft.x = Math.max(
+          0,
+          Math.min(BOARD_WIDTH - viewport.width, viewport.topleft.x)
+        );
+        viewport.topleft.y = Math.max(
+          0,
+          Math.min(BOARD_HEIGHT - viewport.height, viewport.topleft.y)
+        );
+      }
+
+      function centerViewport() {
+        viewport.topleft.x = BOARD_WIDTH / 2 - viewport.width / 2;
+        viewport.topleft.y = BOARD_HEIGHT / 2 - viewport.height / 2;
+        constrainViewport();
+        updateViewportInfo();
+      }
+
+      function updateViewportInfo() {
+        document.getElementById("viewport-info").textContent = `(${Math.round(
+          viewport.topleft.x
+        )}, ${Math.round(viewport.topleft.y)}) ${Math.round(
+          viewport.width
+        )}×${Math.round(viewport.height)}`;
+      }
+
+      function updateCircles(deltaTime) {
+        const lerpSpeed = 8; // How fast to interpolate to server position
+
+        for (let [id, circle] of circles) {
+          // Smooth interpolation towards target position
+          const t = Math.min(1, deltaTime * lerpSpeed);
+          circle.x = lerp(circle.x, circle.targetX, t);
+          circle.y = lerp(circle.y, circle.targetY, t);
+        }
+      }
+
+      function handleInput() {
+        let moved = false;
+
+        // // Handle movement keys
+        // if (keys["w"] || keys["arrowup"]) {
+        //   viewport.topleft.y -= MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["s"] || keys["arrowdown"]) {
+        //   viewport.topleft.y += MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["a"] || keys["arrowleft"]) {
+        //   viewport.topleft.x -= MOVE_SPEED;
+        //   moved = true;
+        // }
+        // if (keys["d"] || keys["arrowright"]) {
+        //   viewport.topleft.x += MOVE_SPEED;
+        //   moved = true;
+        // }
+
+        if (moved) {
+          constrainViewport();
+          updateViewportInfo();
+        }
+      }
+
+      function render() {
+        // Clear canvas
+        ctx.fillStyle = "#f8f9fa";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw grid (optional - helps with debugging)
+        ctx.strokeStyle = "#e9ecef";
+        ctx.lineWidth = 1;
+        const gridSize = 100;
+
+        // Vertical lines
+        for (
+          let boardX = Math.floor(viewport.topleft.x / gridSize) * gridSize;
+          boardX <= viewport.topleft.x + viewport.width;
+          boardX += gridSize
+        ) {
+          const screenPos = board2screen({ x: boardX, y: 0 });
+          ctx.beginPath();
+          ctx.moveTo(screenPos.x, 0);
+          ctx.lineTo(screenPos.x, canvas.height);
+          ctx.stroke();
+        }
+
+        // Horizontal lines
+        for (
+          let boardY = Math.floor(viewport.topleft.y / gridSize) * gridSize;
+          boardY <= viewport.topleft.y + viewport.height;
+          boardY += gridSize
+        ) {
+          const screenPos = board2screen({ x: 0, y: boardY });
+          ctx.beginPath();
+          ctx.moveTo(0, screenPos.y);
+          ctx.lineTo(canvas.width, screenPos.y);
+          ctx.stroke();
+        }
+
+        // Draw circles
+        for (let [id, circle] of circles) {
+          const screenPos = board2screen({ x: circle.x, y: circle.y });
+
+          // Only draw if visible on screen (with some margin)
+          const margin = circle.radius + 10;
+          if (
+            screenPos.x >= -margin &&
+            screenPos.x <= canvas.width + margin &&
+            screenPos.y >= -margin &&
+            screenPos.y <= canvas.height + margin
+          ) {
+            ctx.fillStyle = circle.color;
+            ctx.beginPath();
+            ctx.arc(screenPos.x, screenPos.y, circle.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Optional: draw circle ID
+            ctx.fillStyle = "white";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(circle.id, screenPos.x, screenPos.y + 4);
+          }
+        }
+
+        // Draw viewport bounds indicator
+        ctx.strokeStyle = "#6c757d";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+      }
+
+      function gameLoop() {
+        const now = performance.now();
+        const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
+        lastUpdateTime = now;
+
+        handleInput();
+        updateCircles(deltaTime);
+        render();
+
+        requestAnimationFrame(gameLoop);
+      }
+
+      // Start the game loop
+      gameLoop();
+    </script>
+  </body>
 </html>

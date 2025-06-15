@@ -28,7 +28,7 @@ uWS.App().ws('/*', {
   open: (ws) => {
     console.log('client connected')
     const id    = uuidv4()
-    ws[id]      = id
+    ws['id']       = id
     const randomX = Math.floor(Math.random() * 1000)
     const randomY = Math.floor(Math.random() * 1000)
     clients[id] = {
@@ -44,9 +44,11 @@ uWS.App().ws('/*', {
   },
 
   message: (ws, message) => {
-    const event = Buffer.from(message).toString() // { cursorX, cursorY}
-    event['id'] = ws.id
-    queue.enqueue(JSON.parse(event))
+
+    const event = Buffer.from(message).toString() // { id, cursorX, cursorY}
+    const json_package = JSON.parse(event)
+    json_package['id'] = ws.id
+    queue.enqueue(json_package)
   },
 
   close: (ws) => {
@@ -79,8 +81,8 @@ async function main(){
     const velocity   = 1
     const positionX  = state[id].x
     const positionY  = state[id].y
-    state[id].x = positionX>cursorX  ? positionX+velocity : positionX-velocity
-    state[id].y = positionY>cursorY  ? positionY+velocity : positionY-velocity
+    state[id].positionX = positionX>cursorX  ? positionX+velocity : positionX-velocity
+    state[id].positionY = positionY>cursorY  ? positionY+velocity : positionY-velocity
   }
 }
 
